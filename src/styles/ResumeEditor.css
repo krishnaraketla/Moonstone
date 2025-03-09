@@ -1,0 +1,109 @@
+.editor-wrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-title {
+  margin-bottom: var(--spacing-sm);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.editor-placeholder {
+  margin-top: var(--spacing-md);
+  color: var(--color-gray-60);
+}
+
+/* Quill editor styles */
+.quill {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.ql-toolbar {
+  border: var(--border) !important;
+  border-bottom: none !important;
+  background-color: var(--color-white);
+}
+
+.ql-container {
+  flex: 1;
+  overflow: auto;
+  font-size: 16px;
+  border: var(--border) !important;
+}
+
+.ql-editor {
+  min-height: 300px;
+  font-family: var(--font-family);
+  line-height: 1.5;
+}
+
+/* Make sure the QuillJS editor is full height */
+.quill > .ql-container > .ql-editor {
+  height: 100%;
+}
+
+/* Add some padding to the Quill editor content */
+.ql-container .ql-editor {
+  padding: var(--spacing-md);
+}
+
+/* Styles for placeholder text */
+.ql-container .ql-editor.ql-blank::before {
+  font-style: italic;
+  color: var(--color-gray-40);
+  font-size: 14px;
+}
+
+/* Improve display of formatted content */
+.ql-editor strong, 
+.ql-editor b {
+  font-weight: bold;
+}
+
+.ql-editor em,
+.ql-editor i {
+  font-style: italic;
+}
+
+.ql-editor u {
+  text-decoration: underline;
+}
+
+.ql-editor p {
+  margin-bottom: 0.8em;
+}
+
+.ql-editor h1, 
+.ql-editor h2, 
+.ql-editor h3 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+}
+
+.ql-editor h1 {
+  font-size: 1.5em;
+}
+
+.ql-editor h2 {
+  font-size: 1.3em;
+}
+
+.ql-editor h3 {
+  font-size: 1.1em;
+}
+
+/* Preserve whitespace for preformatted text */
+.ql-editor pre {
+  white-space: pre-wrap;
+  background-color: #f8f8f8;
+  border-radius: 3px;
+  padding: 5px;
+  margin: 5px 0;
+} 

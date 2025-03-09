@@ -1,0 +1,64 @@
+.app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.main-content {
+  flex: 1;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin-bottom: var(--spacing-md);
+  -webkit-app-region: drag;
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--color-black);
+  align-items: center;
+}
+
+.file-upload-buttons {
+  display: flex;
+  margin-bottom: var(--spacing-md);
+}
+
+.file-upload-button {
+  margin-right: var(--spacing-md);
+}
+
+.file-name {
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-gray-70);
+}
+
+.job-description {
+  border: var(--border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  width: 100%;
+  resize: none;
+  min-height: 100px;
+  background-color: var(--color-white);
+}
+
+.editor-container {
+  flex: 1;
+  padding: var(--spacing-md);
+  border: var(--border);
+  border-radius: var(--border-radius);
+  overflow: auto;
+  background-color: var(--color-white);
+  box-shadow: var(--shadow);
+} 

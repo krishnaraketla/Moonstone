@@ -1,0 +1,80 @@
+.side-panel {
+  width: 300px;
+  padding: var(--spacing-md);
+  border-left: var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: auto;
+  background-color: var(--color-white);
+}
+
+.side-panel-header {
+  margin-bottom: var(--spacing-md);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.prompt-form {
+  margin-bottom: var(--spacing-lg);
+}
+
+.prompt-input {
+  resize: none;
+  min-height: 100px;
+  margin-bottom: var(--spacing-md);
+}
+
+.submit-button {
+  width: 100%;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--color-gray-20);
+  margin: var(--spacing-md) 0;
+  width: 100%;
+}
+
+.suggestion-header {
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs);
+}
+
+.suggestion-prompt {
+  color: var(--color-gray-70);
+  margin-bottom: var(--spacing-sm);
+  font-size: 14px;
+}
+
+.suggestion-content {
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background-color: var(--color-gray-10);
+  border-radius: var(--border-radius);
+  max-height: 200px;
+  overflow: auto;
+  font-size: 14px;
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.accept-button {
+  flex: 1;
+  background-color: var(--color-black);
+}
+
+.reject-button {
+  flex: 1;
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: var(--border);
+}
+
+.help-text {
+  color: var(--color-gray-60);
+  font-size: 14px;
+} 
