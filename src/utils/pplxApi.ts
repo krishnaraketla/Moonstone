@@ -190,4 +190,158 @@ export const extractKeywordsWithPplx = async (jobDescription: string): Promise<s
     }
     return [];
   }
+};
+
+/**
+ * Function to fix formatting issues in a resume using PPLX API
+ * @param resumeContent - The resume content to format
+ * @returns Promise containing properly formatted resume content
+ */
+export const fixResumeFormatting = async (resumeContent: string): Promise<string> => {
+  // Ensure resume content is provided
+  if (!resumeContent || resumeContent.trim() === '') {
+    console.log('No resume content provided');
+    return '';
+  }
+
+  // Add a unique identifier to each content we process to avoid reprocessing
+  // Check if this content has a processing marker at the end
+  if (resumeContent.endsWith('___FORMATTED___')) {
+    console.log('Content already has formatting marker, skipping API call');
+    return resumeContent;
+  }
+
+  try {
+    // PPLX API endpoint
+    const apiUrl = 'https://api.perplexity.ai/chat/completions';
+    
+    // Get API key from environment variable
+    const apiKey = process.env.REACT_APP_PPLX_API_KEY;
+    
+    if (!apiKey) {
+      console.error('PPLX API key not found. Please add REACT_APP_PPLX_API_KEY to your environment variables.');
+      return resumeContent + '___FORMATTED___'; // Return original content with marker if no API key
+    }
+
+    console.log('Making API request to Perplexity AI for resume formatting...');
+    console.log('Resume content length:', resumeContent.length);
+    
+    // Check if content is HTML or plain text
+    const isHtml = resumeContent.includes('<') && resumeContent.includes('>');
+    
+    // If resume is too long, we should truncate it to prevent API issues
+    // Typical token limits are around 4096, but we'll be conservative
+    const MAX_CONTENT_LENGTH = 3000;
+    const truncatedContent = resumeContent.length > MAX_CONTENT_LENGTH
+      ? resumeContent.substring(0, MAX_CONTENT_LENGTH) + (isHtml ? ' ...' : '...')
+      : resumeContent;
+    
+    if (resumeContent.length > MAX_CONTENT_LENGTH) {
+      console.log(`Resume content truncated from ${resumeContent.length} to ${MAX_CONTENT_LENGTH} characters for API request`);
+    }
+    
+    // Create a prompt based on the content type
+    let userPrompt = '';
+    
+    if (isHtml) {
+      userPrompt = `Format this HTML resume. Fix spacing and alignment only. Preserve all content. 
+
+IMPORTANT: Return ONLY the formatted HTML resume. DO NOT include explanations, markdown code blocks, or "Changes Made" sections.
+
+${truncatedContent}`;
+    } else {
+      userPrompt = `Format this resume text. Improve spacing, structure, and alignment. Preserve all content.
+
+IMPORTANT: Return ONLY the formatted resume text. DO NOT include explanations, markdown code blocks, or "Changes Made" sections.
+
+${truncatedContent}`;
+    }
+    
+    // Prepare the API request
+    console.log('Sending API request...');
+    const response = await axios.post<PplxResponse>(
+      apiUrl,
+      {
+        model: 'sonar', // Valid model from the documentation
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a resume formatter. Your only task is to fix resume formatting issues without changing content. Return ONLY the formatted resume. Never include explanations, commentary, markdown code blocks like ```html or ```, or "Changes Made" sections in your response.'
+          },
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ],
+        max_tokens: 3000, // Increase token limit to ensure complete response
+        temperature: 0.1 // Lower temperature for more consistent results
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000 // 30-second timeout for the request
+      }
+    );
+
+    // Process the API response
+    console.log('Received formatting response from API');
+    
+    // Get the formatted content from the response
+    let formattedContent = response.data.choices[0]?.message?.content || '';
+    console.log('Formatted content length:', formattedContent.length);
+    
+    // More thorough cleanup to remove code blocks and explanations
+    formattedContent = formattedContent
+      .replace(/```html/g, '')
+      .replace(/```/g, '')
+      .trim();
+      
+    // Remove any explanatory sections using indexOf
+    const explanationMarkers = [
+      "### Changes Made:",
+      "Changes Made:",
+      "Here's the formatted",
+      "I've formatted"
+    ];
+    
+    for (const marker of explanationMarkers) {
+      const index = formattedContent.indexOf(marker);
+      if (index > 0) {
+        formattedContent = formattedContent.substring(0, index).trim();
+      }
+    }
+    
+    // If the response is empty, return the original content
+    if (!formattedContent || formattedContent.trim() === '') {
+      console.error('Empty response from API');
+      return resumeContent + '___FORMATTED___';
+    }
+    
+    // If the content was truncated but the API returned something
+    // We should return the formatted part and keep the original remainder
+    let finalContent;
+    if (resumeContent.length > MAX_CONTENT_LENGTH && formattedContent.length > 0) {
+      console.log('Merging formatted content with original remainder');
+      finalContent = formattedContent + resumeContent.substring(MAX_CONTENT_LENGTH);
+    } else {
+      finalContent = formattedContent;
+    }
+    
+    // Add marker to indicate this content has been processed
+    return finalContent + '___FORMATTED___';
+  } catch (error) {
+    console.error('Error fixing resume formatting with PPLX API:', error);
+    // Log more details about the error
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        responseData: error.response?.data
+      });
+    }
+    // Return original content with marker if there's an error to prevent reprocessing
+    return resumeContent + '___FORMATTED___';
+  }
 }; 
