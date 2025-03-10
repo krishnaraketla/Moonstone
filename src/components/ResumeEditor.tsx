@@ -115,7 +115,7 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange, ne
           // Add marker to prevent reprocessing 
           onChange(contentToFormat + '___FORMATTED___');
         }
-      }, 10000); // 10 seconds timeout
+      }, 180000); // 3 minutes timeout (accounting for 60s timeout × 3 attempts)
       
       try {
         console.log('[ResumeEditor] Calling PPLX API for formatting');

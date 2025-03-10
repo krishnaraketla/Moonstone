@@ -48,6 +48,8 @@
     "express": "^4.21.2",
     "keywords-extractor": "^0.1.1",
     "mammoth": "^1.6.0",
+    "mongodb": "^6.14.2",
+    "mongoose": "^8.12.1",
     "pdf-parse": "^1.1.1",
     "rake-modified": "^1.0.8",
     "rake-pos": "^1.0.17",

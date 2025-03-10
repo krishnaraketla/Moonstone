@@ -31,10 +31,18 @@
 .file-upload-buttons {
   display: flex;
   margin-bottom: var(--spacing-md);
+  align-items: center;
+  width: 100%;
 }
 
 .file-upload-button {
   margin-right: var(--spacing-md);
+}
+
+.saved-resumes-wrapper {
+  margin-left: auto; /* Push to right side */
+  display: flex;
+  align-items: center;
 }
 
 .file-name {

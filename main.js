@@ -3,6 +3,28 @@ const path = require('path');
 const fs = require('fs');
 const PDFParser = require('pdf-parse');
 const mammoth = require('mammoth');
+const { MongoClient, ObjectId } = require('mongodb');
+require('dotenv').config();
+
+// MongoDB connection string from environment variables
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const DB_NAME = process.env.DB_NAME || 'resume_tuner';
+const COLLECTION_NAME = 'saved_resumes';
+
+let mongoClient;
+let db;
+
+// Connect to MongoDB
+async function connectToMongoDB() {
+  try {
+    mongoClient = new MongoClient(MONGODB_URI);
+    await mongoClient.connect();
+    console.log('Connected to MongoDB');
+    db = mongoClient.db(DB_NAME);
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error);
+  }
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
 if (require('electron-squirrel-startup')) {
@@ -131,5 +153,54 @@ ipcMain.handle('upload-file', async (event, fileType) => {
       success: false,
       message: `Error uploading file: ${error.message}`
     };
+  }
+});
+
+// Handle saving a resume to MongoDB
+ipcMain.handle('save-resume', async (event, data) => {
+  if (!db) {
+    await connectToMongoDB();
+  }
+  
+  try {
+    const collection = db.collection(COLLECTION_NAME);
+    const resumeData = {
+      name: data.name,
+      content: data.content,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const result = await collection.insertOne(resumeData);
+    return {
+      ...resumeData,
+      _id: result.insertedId.toString()
+    };
+  } catch (error) {
+    console.error('Error saving resume:', error);
+    throw error;
+  }
+});
+
+// Handle retrieving saved resumes from MongoDB
+ipcMain.handle('get-saved-resumes', async () => {
+  if (!db) {
+    await connectToMongoDB();
+  }
+  
+  try {
+    const collection = db.collection(COLLECTION_NAME);
+    const resumes = await collection.find({})
+      .sort({ updatedAt: -1 })
+      .toArray();
+    
+    // Convert ObjectId to string for JSON serialization
+    return resumes.map(resume => ({
+      ...resume,
+      _id: resume._id.toString()
+    }));
+  } catch (error) {
+    console.error('Error retrieving saved resumes:', error);
+    throw error;
   }
 }); 

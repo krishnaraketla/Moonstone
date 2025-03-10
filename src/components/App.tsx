@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import ResumeEditor from './ResumeEditor';
 import SidePanel from './SidePanel';
 import KeywordMatchVisualizer from './KeywordMatchVisualizer';
+import SavedResumes from './SavedResumes';
 import '../styles/App.css';
 
 interface Suggestion {
@@ -99,6 +100,15 @@ const App: React.FC = () => {
     }
   };
 
+  // Handle selecting a saved resume
+  const handleSavedResumeSelect = (resumeContent: string) => {
+    // Set the content with formatting marker to indicate
+    // this content has already been formatted
+    setResumeContent(resumeContent + '___FORMATTED___');
+    // Don't trigger formatting for loaded resumes
+    setNeedsFormatting(false);
+  };
+
   return (
     <div className="app">
       {/* Main Content Area */}
@@ -124,10 +134,19 @@ const App: React.FC = () => {
             Upload PDF
           </button>
           <button
+            className="file-upload-button"
             onClick={handleUploadDOCX}
           >
             Upload DOCX
           </button>
+          
+          {/* Add SavedResumes component */}
+          <div className="saved-resumes-wrapper">
+            <SavedResumes 
+              currentContent={resumeContent.replace('___FORMATTED___', '')}
+              onResumeSelect={handleSavedResumeSelect}
+            />
+          </div>
         </div>
         
         {fileName && (

@@ -119,7 +119,8 @@ ${truncatedContent}`;
       userPrompt,
       maxTokens: 6000,
       temperature: 0.1,
-      timeoutMs: 30000
+      timeoutMs: 60000,
+      retries: 2
     });
     
     console.log('Formatted content length:', formattedContent.length);

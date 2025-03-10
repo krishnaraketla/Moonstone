@@ -13,6 +13,7 @@ export interface PplxApiCallOptions {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
+  retries?: number;
 }
 
 /**
@@ -32,57 +33,79 @@ export async function callPplxApi(options: PplxApiCallOptions): Promise<string> 
     throw new Error('PPLX API key not found');
   }
 
-  try {
-    console.log('Making API request to Perplexity AI...');
-    
-    // Use provided options or defaults
-    const model = options.model || 'sonar';
-    const maxTokens = options.maxTokens || 1000;
-    const temperature = options.temperature || 0.1;
-    const timeoutMs = options.timeoutMs || 30000;
-    
-    // Prepare the API request
-    const response = await axios.post<PplxResponse>(
-      apiUrl,
-      {
-        model: model,
-        messages: [
-          {
-            role: 'system',
-            content: options.systemPrompt
-          },
-          {
-            role: 'user',
-            content: options.userPrompt
-          }
-        ],
-        max_tokens: maxTokens,
-        temperature: temperature
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+  // Use provided options or defaults
+  const model = options.model || 'sonar';
+  const maxTokens = options.maxTokens || 1000;
+  const temperature = options.temperature || 0.1;
+  const timeoutMs = options.timeoutMs || 60000; // Increased default timeout to 60 seconds
+  const maxRetries = options.retries || 2; // Default to 2 retries
+  
+  let retryCount = 0;
+  let lastError: any = null;
+
+  while (retryCount <= maxRetries) {
+    try {
+      console.log(`Making API request to Perplexity AI... (Attempt ${retryCount + 1}/${maxRetries + 1})`);
+      
+      // Prepare the API request
+      const response = await axios.post<PplxResponse>(
+        apiUrl,
+        {
+          model: model,
+          messages: [
+            {
+              role: 'system',
+              content: options.systemPrompt
+            },
+            {
+              role: 'user',
+              content: options.userPrompt
+            }
+          ],
+          max_tokens: maxTokens,
+          temperature: temperature
         },
-        timeout: timeoutMs
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: timeoutMs
+        }
+      );
+      
+      // Extract the content from the response
+      const result = response.data.choices[0]?.message?.content || '';
+      return result;
+    } catch (error) {
+      lastError = error;
+      
+      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+        console.warn(`API request timed out (Attempt ${retryCount + 1}/${maxRetries + 1})`);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying API request in 2 seconds... (Attempt ${retryCount + 1}/${maxRetries + 1})`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+          continue;
+        }
       }
-    );
-    
-    // Extract the content from the response
-    const result = response.data.choices[0]?.message?.content || '';
-    return result;
-  } catch (error) {
-    console.error('Error calling PPLX API:', error);
-    // Log more details about the error
-    if (axios.isAxiosError(error)) {
-      console.error('Axios error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        responseData: error.response?.data
-      });
+      
+      console.error('Error calling PPLX API:', error);
+      // Log more details about the error
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          responseData: error.response?.data
+        });
+      }
+      throw error;
     }
-    throw error;
   }
+  
+  // This will only be reached if all retries were used up
+  throw lastError;
 }
 
 // Re-export the functions and types
