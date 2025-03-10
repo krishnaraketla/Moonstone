@@ -17,13 +17,20 @@ const App: React.FC = () => {
   const [fileName, setFileName] = useState<string>('');
   const [editHistory, setEditHistory] = useState<Suggestion[]>([]);
   const [currentSuggestion, setCurrentSuggestion] = useState<Suggestion | null>(null);
+  const [needsFormatting, setNeedsFormatting] = useState<boolean>(false);
   const editorRef = useRef<any>(null);
 
   const handleUploadPDF = async () => {
     try {
       const result = await window.electronAPI.uploadFile('pdf');
       if (result.success) {
-        setResumeContent(result.content);
+        console.log('[App] New PDF file uploaded, setting clean content');
+        // Remove any formatting marker from the new content
+        const cleanContent = result.content.replace('___FORMATTED___', '');
+        // Set the flag to indicate this needs formatting
+        setNeedsFormatting(true);
+        // Pass the content to the editor
+        setResumeContent(cleanContent);
         setFileName(result.fileName);
       } else {
         alert(result.message);
@@ -38,8 +45,13 @@ const App: React.FC = () => {
     try {
       const result = await window.electronAPI.uploadFile('docx');
       if (result.success) {
-        setResumeContent(result.content);
-        // save content to txt file 
+        console.log('[App] New DOCX file uploaded, setting clean content');
+        // Remove any formatting marker from the new content
+        const cleanContent = result.content.replace('___FORMATTED___', '');
+        // Set the flag to indicate this needs formatting
+        setNeedsFormatting(true);
+        // Pass the content to the editor
+        setResumeContent(cleanContent);
         setFileName(result.fileName);
       } else {
         alert(result.message);
@@ -51,7 +63,10 @@ const App: React.FC = () => {
   };
 
   const handleResumeChange = (content: string) => {
+    // Don't strip the marker as it may be needed by the formatter
     setResumeContent(content);
+    // Format has been completed at this point
+    setNeedsFormatting(false);
   };
 
   const handlePromptSubmit = (prompt: string) => {
@@ -126,6 +141,7 @@ const App: React.FC = () => {
           <ResumeEditor 
             content={resumeContent} 
             onChange={handleResumeChange}
+            needsFormatting={needsFormatting}
             ref={editorRef}
           />
         </div>

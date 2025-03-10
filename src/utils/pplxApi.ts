@@ -198,18 +198,22 @@ export const extractKeywordsWithPplx = async (jobDescription: string): Promise<s
  * @returns Promise containing properly formatted resume content
  */
 export const fixResumeFormatting = async (resumeContent: string): Promise<string> => {
+  console.log('[pplxApi] fixResumeFormatting called');
+  console.log('[pplxApi] Input content length:', resumeContent.length);
+  
   // Ensure resume content is provided
   if (!resumeContent || resumeContent.trim() === '') {
-    console.log('No resume content provided');
+    console.log('[pplxApi] No resume content provided');
     return '';
   }
 
-  // Add a unique identifier to each content we process to avoid reprocessing
-  // Check if this content has a processing marker at the end
-  if (resumeContent.endsWith('___FORMATTED___')) {
-    console.log('Content already has formatting marker, skipping API call');
-    return resumeContent;
-  }
+  // Remove any existing formatting marker before processing
+  const cleanContent = resumeContent.endsWith('___FORMATTED___') 
+    ? resumeContent.replace('___FORMATTED___', '') 
+    : resumeContent;
+    
+  console.log('[pplxApi] Content has formatting marker:', resumeContent.endsWith('___FORMATTED___'));
+  console.log('[pplxApi] Will process clean content length:', cleanContent.length);
 
   try {
     // PPLX API endpoint
@@ -220,24 +224,24 @@ export const fixResumeFormatting = async (resumeContent: string): Promise<string
     
     if (!apiKey) {
       console.error('PPLX API key not found. Please add REACT_APP_PPLX_API_KEY to your environment variables.');
-      return resumeContent + '___FORMATTED___'; // Return original content with marker if no API key
+      return cleanContent + '___FORMATTED___'; // Return original content with marker if no API key
     }
 
     console.log('Making API request to Perplexity AI for resume formatting...');
-    console.log('Resume content length:', resumeContent.length);
+    console.log('Resume content length:', cleanContent.length);
     
     // Check if content is HTML or plain text
-    const isHtml = resumeContent.includes('<') && resumeContent.includes('>');
+    const isHtml = cleanContent.includes('<') && cleanContent.includes('>');
     
     // If resume is too long, we should truncate it to prevent API issues
     // Typical token limits are around 4096, but we'll be conservative
     const MAX_CONTENT_LENGTH = 6000;
-    const truncatedContent = resumeContent.length > MAX_CONTENT_LENGTH
-      ? resumeContent.substring(0, MAX_CONTENT_LENGTH) + (isHtml ? ' ...' : '...')
-      : resumeContent;
+    const truncatedContent = cleanContent.length > MAX_CONTENT_LENGTH
+      ? cleanContent.substring(0, MAX_CONTENT_LENGTH) + (isHtml ? ' ...' : '...')
+      : cleanContent;
     
-    if (resumeContent.length > MAX_CONTENT_LENGTH) {
-      console.log(`Resume content truncated from ${resumeContent.length} to ${MAX_CONTENT_LENGTH} characters for API request`);
+    if (cleanContent.length > MAX_CONTENT_LENGTH) {
+      console.log(`Resume content truncated from ${cleanContent.length} to ${MAX_CONTENT_LENGTH} characters for API request`);
     }
     
     // Create a prompt based on the content type
@@ -449,15 +453,15 @@ ${truncatedContent}`;
     // If the response is empty, return the original content
     if (!formattedContent || formattedContent.trim() === '') {
       console.error('Empty response from API');
-      return resumeContent + '___FORMATTED___';
+      return cleanContent + '___FORMATTED___';
     }
     
     // If the content was truncated but the API returned something
     // We should return the formatted part and keep the original remainder
     let finalContent;
-    if (resumeContent.length > MAX_CONTENT_LENGTH && formattedContent.length > 0) {
+    if (cleanContent.length > MAX_CONTENT_LENGTH && formattedContent.length > 0) {
       console.log('Merging formatted content with original remainder');
-      finalContent = formattedContent + resumeContent.substring(MAX_CONTENT_LENGTH);
+      finalContent = formattedContent + cleanContent.substring(MAX_CONTENT_LENGTH);
     } else {
       finalContent = formattedContent;
     }
@@ -481,6 +485,6 @@ ${truncatedContent}`;
       });
     }
     // Return original content with marker if there's an error to prevent reprocessing
-    return resumeContent + '___FORMATTED___';
+    return cleanContent + '___FORMATTED___';
   }
 }; 

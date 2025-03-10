@@ -26,19 +26,25 @@ const addCustomStyles = () => {
 interface ResumeEditorProps {
   content: string;
   onChange: (content: string) => void;
+  needsFormatting?: boolean; // New prop to signal formatting needed
 }
 
-const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, ref) => {
-  const quillRef = useRef<ReactQuill>(null);
-  const [isFormatting, setIsFormatting] = useState<boolean>(false);
-  // Store the original content that needs to be formatted
+const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange, needsFormatting = false }, ref) => {
+  const [displayContent, setDisplayContent] = useState<string>('');
   const [contentToFormat, setContentToFormat] = useState<string | null>(null);
-  // Store the actual content to display in the editor
-  const [displayContent, setDisplayContent] = useState<string>(content || '');
-  // Flag to track whether we need to format
-  const shouldFormatRef = useRef<boolean>(true);
-  // Flag to prevent infinite loops
+  const [isFormatting, setIsFormatting] = useState<boolean>(false);
+  
+  // Create a ref for the editor so we can access its methods
+  const quillRef = useRef<ReactQuill>(null);
+  
+  // Create a ref to track if this is the first render
   const isInitialRender = useRef<boolean>(true);
+  
+  // Create a ref to track whether we should try to format
+  const shouldFormatRef = useRef<boolean>(true);
+  
+  // Create a ref to track the previous content to detect new file uploads
+  const previousContentRef = useRef<string>('');
 
   const modules = {
     toolbar: [
@@ -63,95 +69,72 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
     addCustomStyles();
   }, []);
 
-  // Handle incoming content changes
+  // Handle incoming content changes - simplified to follow strict flow
   useEffect(() => {
-    // Skip if no content or if we're currently formatting
-    if (!content || isFormatting) return;
+    // Don't do anything during formatting
+    if (isFormatting) return;
     
-    // Remove the formatting marker if present
+    console.log('[ResumeEditor] Content received');
+    
+    // Clean any formatting markers
     const cleanContent = content.endsWith('___FORMATTED___') 
       ? content.replace('___FORMATTED___', '')
       : content;
     
-    // Only set content for initial render or genuine external content changes
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      // Don't format content that already has the marker (it was previously formatted)
-      if (content.endsWith('___FORMATTED___')) {
-        console.log('Content already has formatting marker, skipping formatting');
-        setDisplayContent(cleanContent);
-      } else {
-        setContentToFormat(cleanContent);
-        setDisplayContent(cleanContent);
-      }
-    } else if (cleanContent !== displayContent) {
-      // Don't format content that already has the marker
-      if (content.endsWith('___FORMATTED___')) {
-        console.log('Content already has formatting marker, skipping formatting');
-        setDisplayContent(cleanContent);
-      } else {
-        setContentToFormat(cleanContent);
-        setDisplayContent(cleanContent);
-      }
+    // If this is a new upload that needs formatting
+    if (needsFormatting && cleanContent) {
+      console.log('[ResumeEditor] New resume upload detected, will format');
+      setContentToFormat(cleanContent);
+      setDisplayContent(cleanContent);
+      setIsFormatting(true);
+    } 
+    // For normal content changes (not needing format)
+    else if (cleanContent) {
+      console.log('[ResumeEditor] Content change that does not need formatting');
+      setDisplayContent(cleanContent);
     }
-  }, [content, isFormatting, displayContent]);
+  }, [content, isFormatting, needsFormatting]);
 
   // Handle formatting when contentToFormat changes
   useEffect(() => {
-    if (!contentToFormat || !shouldFormatRef.current) return;
+    if (!contentToFormat || !isFormatting) return;
     
     const formatResumeContent = async () => {
-      // Prevent multiple formatting attempts
-      shouldFormatRef.current = false;
-      setIsFormatting(true);
+      console.log('[ResumeEditor] Starting resume formatting...');
       
       // Set a timeout to prevent infinite loading state
       const timeoutId = setTimeout(() => {
-        console.log('Formatting timeout reached, displaying original content');
-        setIsFormatting(false);
+        console.log('[ResumeEditor] Formatting timeout reached');
         
-        // Make sure content is clean
-        const cleanContent = contentToFormat?.endsWith('___FORMATTED___')
-          ? contentToFormat.replace('___FORMATTED___', '')
-          : contentToFormat;
-          
-        if (cleanContent) {
-          setDisplayContent(cleanContent);
+        // Clear state and fallback to unformatted content
+        setIsFormatting(false);
+        setContentToFormat(null);
+        
+        if (contentToFormat) {
+          setDisplayContent(contentToFormat);
           // Add marker to prevent reprocessing 
-          onChange(cleanContent + '___FORMATTED___');
-          setContentToFormat(null);
+          onChange(contentToFormat + '___FORMATTED___');
         }
       }, 10000); // 10 seconds timeout
       
       try {
-        console.log('Starting resume formatting');
+        console.log('[ResumeEditor] Calling PPLX API for formatting');
         
-        // Make sure we're not sending content with a marker
-        const cleanContentToFormat = contentToFormat?.endsWith('___FORMATTED___')
-          ? contentToFormat.replace('___FORMATTED___', '')
-          : contentToFormat;
-          
-        if (!cleanContentToFormat) {
-          console.error('No content to format after cleaning');
-          setIsFormatting(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-        
-        console.log('Calling PPLX API for formatting');
-        const formattedContent = await fixResumeFormatting(cleanContentToFormat);
+        // Force format even if it has a marker (by removing the marker first)
+        const contentToSend = contentToFormat.replace('___FORMATTED___', '');
+        const formattedContent = await fixResumeFormatting(contentToSend);
         
         // Clear the timeout since we got a response
         clearTimeout(timeoutId);
         
-        // The API adds a marker, so let's clean it before displaying
+        // Clean any marker from the response
         const cleanFormattedContent = formattedContent.endsWith('___FORMATTED___')
           ? formattedContent.replace('___FORMATTED___', '')
           : formattedContent;
         
-        // If the formatting was successful and content changed
-        if (cleanFormattedContent && cleanFormattedContent !== cleanContentToFormat) {
-          console.log('Successfully formatted content');
+        // If the formatting was successful
+        if (cleanFormattedContent) {
+          console.log('[ResumeEditor] Successfully formatted content');
           
           // Check if the formatted content is markdown
           const hasMarkdownHeaders = /^#+ /m.test(cleanFormattedContent);
@@ -159,121 +142,63 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
           const hasMarkdownItalic = /\*[^*]+\*/m.test(cleanFormattedContent);
           const hasMarkdownList = /^- /m.test(cleanFormattedContent);
           
+          // First clear formatting state
+          setIsFormatting(false);
+          setContentToFormat(null);
+          
           if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
-            console.log('Content appears to be markdown, converting to HTML');
+            console.log('[ResumeEditor] Content is markdown, converting to HTML');
             const htmlContent = convertMarkdownToHtml(cleanFormattedContent);
             setDisplayContent(htmlContent);
-            // Let the parent know about the HTML content (with marker)
             onChange(htmlContent + '___FORMATTED___');
           } else {
             setDisplayContent(cleanFormattedContent);
-            // Let the parent know about the formatted content (with marker)
-            onChange(formattedContent); // Keep the marker if it exists
-          }
-        } else if (!cleanContentToFormat.includes('<') || !cleanContentToFormat.includes('>')) {
-          // If content is plain text and no formatting was applied, convert to HTML
-          console.log('No formatting changes from API, converting plain text to HTML');
-          
-          // Check if it looks like markdown
-          const hasMarkdownHeaders = /^#+ /m.test(cleanContentToFormat);
-          const hasMarkdownBold = /\*\*[^*]+\*\*/m.test(cleanContentToFormat);
-          const hasMarkdownItalic = /\*[^*]+\*/m.test(cleanContentToFormat);
-          const hasMarkdownList = /^- /m.test(cleanContentToFormat);
-          
-          if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
-            console.log('Content appears to be markdown, converting to HTML');
-            const htmlContent = convertMarkdownToHtml(cleanContentToFormat);
-            setDisplayContent(htmlContent);
-            onChange(htmlContent + '___FORMATTED___');
-          } else {
-            const htmlContent = convertPlainTextToHtml(cleanContentToFormat);
-            setDisplayContent(htmlContent);
-            onChange(htmlContent + '___FORMATTED___');
+            onChange(cleanFormattedContent + '___FORMATTED___');
           }
         } else {
-          // If no changes and content is HTML, just use the original content
-          console.log('No formatting changes needed for HTML content');
-          setDisplayContent(cleanContentToFormat);
-          onChange(cleanContentToFormat + '___FORMATTED___');
+          // If no formatting happened, use original content
+          console.log('[ResumeEditor] No formatting changes, using original content');
+          setIsFormatting(false);
+          setContentToFormat(null);
+          setDisplayContent(contentToFormat);
+          onChange(contentToFormat + '___FORMATTED___');
         }
       } catch (error) {
-        console.error('Error formatting resume:', error);
+        console.error('[ResumeEditor] Error formatting resume:', error);
         
-        // Clean up the content first
-        const cleanContentToFormat = contentToFormat?.endsWith('___FORMATTED___')
-          ? contentToFormat.replace('___FORMATTED___', '')
-          : contentToFormat;
-          
-        if (!cleanContentToFormat) {
-          console.error('No content to format after cleaning');
-          setIsFormatting(false);
-          clearTimeout(timeoutId);
-          return;
-        }
-        
-        // Fallback to plain text or markdown conversion
-        if (!cleanContentToFormat.includes('<') || !cleanContentToFormat.includes('>')) {
-          // Check if it looks like markdown
-          const hasMarkdownHeaders = /^#+ /m.test(cleanContentToFormat);
-          const hasMarkdownBold = /\*\*[^*]+\*\*/m.test(cleanContentToFormat);
-          const hasMarkdownItalic = /\*[^*]+\*/m.test(cleanContentToFormat);
-          const hasMarkdownList = /^- /m.test(cleanContentToFormat);
-          
-          if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
-            console.log('Error occurred, falling back to markdown conversion');
-            const htmlContent = convertMarkdownToHtml(cleanContentToFormat);
-            setDisplayContent(htmlContent);
-            onChange(htmlContent + '___FORMATTED___');
-          } else {
-            console.log('Error occurred, falling back to plain text conversion');
-            const htmlContent = convertPlainTextToHtml(cleanContentToFormat);
-            setDisplayContent(htmlContent);
-            onChange(htmlContent + '___FORMATTED___');
-          }
-        } else {
-          // Use original content if HTML and there was an error
-          console.log('Error occurred, using original HTML content');
-          setDisplayContent(cleanContentToFormat);
-          onChange(cleanContentToFormat + '___FORMATTED___');
-        }
-      } finally {
-        // Clear the timeout and set formatting to false
-        clearTimeout(timeoutId);
+        // Clear state on error
         setIsFormatting(false);
         setContentToFormat(null);
+        
+        // Use original content on error
+        setDisplayContent(contentToFormat);
+        onChange(contentToFormat + '___FORMATTED___');
+        
+        // Clear timeout
+        clearTimeout(timeoutId);
       }
     };
     
     formatResumeContent();
   }, [contentToFormat, onChange]);
 
-  // Local change handler that doesn't trigger reformatting
-  const handleEditorChange = (newContent: string) => {
-    // Make sure we strip out any formatting markers
-    const cleanContent = newContent.endsWith('___FORMATTED___')
-      ? newContent.replace('___FORMATTED___', '')
-      : newContent;
-      
-    setDisplayContent(cleanContent);
-    // Add the marker when sending to parent to prevent reprocessing
-    onChange(cleanContent + '___FORMATTED___');
-  };
-
-  // Skip formatting button handler
+  // Skip formatting button handler - simplified
   const skipFormatting = () => {
+    console.log('[ResumeEditor] User skipped formatting');
+    
+    // Clear formatting state
     setIsFormatting(false);
-    if (contentToFormat) {
-      // Clean content just in case it has a marker
-      const cleanContent = contentToFormat.endsWith('___FORMATTED___')
-        ? contentToFormat.replace('___FORMATTED___', '')
-        : contentToFormat;
+    setContentToFormat(null);
+    
+    // Use unformatted content but add marker
+    if (content) {
+      const cleanContent = content.endsWith('___FORMATTED___') 
+        ? content.replace('___FORMATTED___', '')
+        : content;
         
       setDisplayContent(cleanContent);
-      // Add marker to prevent reprocessing
       onChange(cleanContent + '___FORMATTED___');
-      setContentToFormat(null);
     }
-    console.log('User skipped formatting, displaying original content');
   };
 
   // Expose the highlightText function via ref
@@ -426,6 +351,27 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
       // If it doesn't look like markdown, treat as plain text
       return convertPlainTextToHtml(markdown);
     }
+  };
+
+  // Local change handler for user edits (not triggering formatting)
+  const handleEditorChange = (newContent: string) => {
+    console.log('[ResumeEditor] Editor content changed by user');
+    
+    // Don't process changes while formatting is in progress
+    if (isFormatting) {
+      console.log('[ResumeEditor] Skipping user edit during formatting');
+      return;
+    }
+    
+    // Make sure we strip out any formatting markers
+    const cleanContent = newContent.endsWith('___FORMATTED___')
+      ? newContent.replace('___FORMATTED___', '')
+      : newContent;
+      
+    setDisplayContent(cleanContent);
+    
+    // Add the marker when sending to parent
+    onChange(cleanContent + '___FORMATTED___');
   };
 
   return (
