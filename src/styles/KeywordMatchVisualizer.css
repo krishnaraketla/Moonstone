@@ -151,10 +151,12 @@ input:checked + .toggle-slider:before {
 
 .progress-bar {
   height: 100%;
-  background-color: transparent;
+  background: linear-gradient(to right, #2ccc71, #1fb264);
+  border-radius: 4px;
+  transition: width 0.5s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 0; /* Always start at 0 */
   position: relative;
-  transition: width 0.5s steps(20, end);
-  border-radius: 0;
   overflow: hidden;
 }
 
@@ -192,8 +194,8 @@ input:checked + .toggle-slider:before {
   flex-wrap: wrap;
   gap: var(--spacing-xs);
   margin-top: var(--spacing-sm);
-  max-height: 150px;
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
 }
 
 .keyword-chip {
@@ -212,8 +214,9 @@ input:checked + .toggle-slider:before {
 }
 
 .keyword-chip.matched {
-  background-color: var(--color-black);
-  color: var(--color-white);
+  background-color: black;
+  color: white;
+  border: 1px solid #222;
 }
 
 .keyword-chip.unmatched {
@@ -224,16 +227,23 @@ input:checked + .toggle-slider:before {
 
 .keyword-chip.selected {
   transform: scale(1.05);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  z-index: 1;
 }
 
 .keyword-chip.matched.selected {
-  background-color: var(--color-black);
-  opacity: 0.9;
+  background-color: #222;
+  color: white;
+  border: 1px solid black;
+  font-weight: 600;
 }
 
 .keyword-chip.unmatched.selected {
-  background-color: var(--color-gray-20);
+  background-color: #666;
+  color: white;
+  font-weight: 600;
+  transform: scale(1.05);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
 .keyword-text {
