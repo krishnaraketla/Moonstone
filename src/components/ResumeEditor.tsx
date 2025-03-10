@@ -138,13 +138,13 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
           return;
         }
         
-        // Use the PPLX API to fix formatting issues
+        console.log('Calling PPLX API for formatting');
         const formattedContent = await fixResumeFormatting(cleanContentToFormat);
         
         // Clear the timeout since we got a response
         clearTimeout(timeoutId);
         
-        // The API now adds a marker, so let's clean it before displaying
+        // The API adds a marker, so let's clean it before displaying
         const cleanFormattedContent = formattedContent.endsWith('___FORMATTED___')
           ? formattedContent.replace('___FORMATTED___', '')
           : formattedContent;
@@ -152,26 +152,52 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
         // If the formatting was successful and content changed
         if (cleanFormattedContent && cleanFormattedContent !== cleanContentToFormat) {
           console.log('Successfully formatted content');
-          setDisplayContent(cleanFormattedContent);
-          // Let the parent know about the formatted content (with marker)
-          onChange(formattedContent); // Keep the marker if it exists
+          
+          // Check if the formatted content is markdown
+          const hasMarkdownHeaders = /^#+ /m.test(cleanFormattedContent);
+          const hasMarkdownBold = /\*\*[^*]+\*\*/m.test(cleanFormattedContent);
+          const hasMarkdownItalic = /\*[^*]+\*/m.test(cleanFormattedContent);
+          const hasMarkdownList = /^- /m.test(cleanFormattedContent);
+          
+          if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
+            console.log('Content appears to be markdown, converting to HTML');
+            const htmlContent = convertMarkdownToHtml(cleanFormattedContent);
+            setDisplayContent(htmlContent);
+            // Let the parent know about the HTML content (with marker)
+            onChange(htmlContent + '___FORMATTED___');
+          } else {
+            setDisplayContent(cleanFormattedContent);
+            // Let the parent know about the formatted content (with marker)
+            onChange(formattedContent); // Keep the marker if it exists
+          }
         } else if (!cleanContentToFormat.includes('<') || !cleanContentToFormat.includes('>')) {
           // If content is plain text and no formatting was applied, convert to HTML
-          console.log('Converting plain text to HTML');
-          const htmlContent = convertPlainTextToHtml(cleanContentToFormat);
-          setDisplayContent(htmlContent);
-          // Let the parent know about the HTML content (with marker)
-          onChange(htmlContent + '___FORMATTED___');
+          console.log('No formatting changes from API, converting plain text to HTML');
+          
+          // Check if it looks like markdown
+          const hasMarkdownHeaders = /^#+ /m.test(cleanContentToFormat);
+          const hasMarkdownBold = /\*\*[^*]+\*\*/m.test(cleanContentToFormat);
+          const hasMarkdownItalic = /\*[^*]+\*/m.test(cleanContentToFormat);
+          const hasMarkdownList = /^- /m.test(cleanContentToFormat);
+          
+          if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
+            console.log('Content appears to be markdown, converting to HTML');
+            const htmlContent = convertMarkdownToHtml(cleanContentToFormat);
+            setDisplayContent(htmlContent);
+            onChange(htmlContent + '___FORMATTED___');
+          } else {
+            const htmlContent = convertPlainTextToHtml(cleanContentToFormat);
+            setDisplayContent(htmlContent);
+            onChange(htmlContent + '___FORMATTED___');
+          }
         } else {
-          // If no changes, just use the original content
-          console.log('No formatting changes needed');
+          // If no changes and content is HTML, just use the original content
+          console.log('No formatting changes needed for HTML content');
           setDisplayContent(cleanContentToFormat);
-          // Add marker
           onChange(cleanContentToFormat + '___FORMATTED___');
         }
       } catch (error) {
         console.error('Error formatting resume:', error);
-        // Fallback to plain text conversion if the API call fails
         
         // Clean up the content first
         const cleanContentToFormat = contentToFormat?.endsWith('___FORMATTED___')
@@ -185,13 +211,28 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
           return;
         }
         
+        // Fallback to plain text or markdown conversion
         if (!cleanContentToFormat.includes('<') || !cleanContentToFormat.includes('>')) {
-          console.log('Error occurred, falling back to plain text conversion');
-          const htmlContent = convertPlainTextToHtml(cleanContentToFormat);
-          setDisplayContent(htmlContent);
-          onChange(htmlContent + '___FORMATTED___');
+          // Check if it looks like markdown
+          const hasMarkdownHeaders = /^#+ /m.test(cleanContentToFormat);
+          const hasMarkdownBold = /\*\*[^*]+\*\*/m.test(cleanContentToFormat);
+          const hasMarkdownItalic = /\*[^*]+\*/m.test(cleanContentToFormat);
+          const hasMarkdownList = /^- /m.test(cleanContentToFormat);
+          
+          if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
+            console.log('Error occurred, falling back to markdown conversion');
+            const htmlContent = convertMarkdownToHtml(cleanContentToFormat);
+            setDisplayContent(htmlContent);
+            onChange(htmlContent + '___FORMATTED___');
+          } else {
+            console.log('Error occurred, falling back to plain text conversion');
+            const htmlContent = convertPlainTextToHtml(cleanContentToFormat);
+            setDisplayContent(htmlContent);
+            onChange(htmlContent + '___FORMATTED___');
+          }
         } else {
           // Use original content if HTML and there was an error
+          console.log('Error occurred, using original HTML content');
           setDisplayContent(cleanContentToFormat);
           onChange(cleanContentToFormat + '___FORMATTED___');
         }
@@ -316,6 +357,77 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
       .replace(/ {2,}/g, match => '&nbsp;'.repeat(match.length));
   };
 
+  // Helper function to convert markdown to HTML
+  const convertMarkdownToHtml = (markdown: string) => {
+    if (!markdown) return '';
+    
+    // Check if the content looks like markdown
+    const hasMarkdownHeaders = /^#+ /m.test(markdown);
+    const hasMarkdownBold = /\*\*[^*]+\*\*/m.test(markdown);
+    const hasMarkdownItalic = /\*[^*]+\*/m.test(markdown);
+    const hasMarkdownList = /^- /m.test(markdown);
+    
+    if (hasMarkdownHeaders || hasMarkdownBold || hasMarkdownItalic || hasMarkdownList) {
+      console.log('Converting markdown to HTML with enhanced converter');
+      
+      // Process the markdown in stages for better control
+      let html = markdown;
+      
+      // Handle headers first (order matters for regex replacements)
+      html = html
+        .replace(/^# ([^\n]+)$/gm, '<h1>$1</h1>')
+        .replace(/^## ([^\n]+)$/gm, '<h2>$1</h2>')
+        .replace(/^### ([^\n]+)$/gm, '<h3>$1</h3>');
+      
+      // Handle lists - need to handle both individual items and wrap in ul
+      // First identify list sections
+      const listSections: {start: number; end: number}[] = [];
+      const lines = html.split('\n');
+      let inList = false;
+      let listStart = 0;
+      
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim().startsWith('- ') && !inList) {
+          inList = true;
+          listStart = i;
+        } else if (!lines[i].trim().startsWith('- ') && inList) {
+          inList = false;
+          listSections.push({start: listStart, end: i - 1});
+        }
+      }
+      
+      // If still in a list at the end, close it
+      if (inList) {
+        listSections.push({start: listStart, end: lines.length - 1});
+      }
+      
+      // Process list sections from end to start to avoid index issues
+      for (let i = listSections.length - 1; i >= 0; i--) {
+        const {start, end} = listSections[i];
+        const listItems = lines.slice(start, end + 1)
+          .map(line => line.replace(/^- (.+)$/, '<li>$1</li>'))
+          .join('');
+        
+        const listHtml = `<ul>${listItems}</ul>`;
+        lines.splice(start, end - start + 1, listHtml);
+      }
+      
+      // Rejoin lines and continue processing
+      html = lines.join('\n');
+      
+      // Handle inline formatting
+      html = html
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+      
+      return html;
+    } else {
+      // If it doesn't look like markdown, treat as plain text
+      return convertPlainTextToHtml(markdown);
+    }
+  };
+
   return (
     <div className="editor-wrapper">
       <h2 className="editor-title">Resume Editor</h2>
@@ -344,7 +456,7 @@ const ResumeEditor = forwardRef<any, ResumeEditorProps>(({ content, onChange }, 
         />
       ) : (
         <p className="editor-placeholder">
-          Upload a resume file or paste content to start editing.
+          Upload a resume file to start editing.
         </p>
       )}
     </div>

@@ -39,6 +39,7 @@ const App: React.FC = () => {
       const result = await window.electronAPI.uploadFile('docx');
       if (result.success) {
         setResumeContent(result.content);
+        // save content to txt file 
         setFileName(result.fileName);
       } else {
         alert(result.message);
