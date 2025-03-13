@@ -1,6 +1,17 @@
 # Resume Tuner
 
-A desktop application for fine-tuning your resume based on job descriptions. Built with Electron, React, and Material UI.
+![Resume Tuner Interface](./assets/image.png)
+
+A desktop application for fine-tuning your resume and writing cover letters based on job descriptions. This tool helps you optimize your resume by highlighting relevant keywords and suggesting targeted improvements.
+
+## Purpose
+
+Resume Tuner helps job seekers to:
+- Tailor their resume specifically to match job descriptions
+- Identify key skills and keywords needed for specific positions
+- Write targeted cover letters based on job descriptions
+- Improve match rate between your qualifications and job requirements
+- Increase chances of passing through ATS (Applicant Tracking Systems)
 
 ## Features
 
@@ -67,157 +78,3 @@ Resume Tuner uses the Perplexity AI API for enhanced keyword extraction:
 ## License
 
 ISC 
-
-# Resume Formatting Example
-
-## Original Plain Text
-
-```
- RAKETLA KRISHNA
-
- +1 617 820 0415 | krishrak@outlook.com | linkedin.com/in/krishna-raketla/
-
-
-
- EDUCATION
-
-
-
- Northeastern University
-
- January 2023 - May 2025
-
- Master's, Computer Science
-
- GPA: 3.5
-
-
-
- Vellore Institute of Technology
-
- July 2016 - August 2019
-
- Bachelor's, Computer Science
-
- GPA: 7.23
-
-
-
- PROFESSIONAL EXPERIENCE
-
-
-
- HP Inc
-
- Bengaluru, Karnataka, India
-
- Senior Software Engineer
-
- January 2021 - November 2022
-
- • Spearheaded the Fax UI workflow, specifically developing and validating specs by coordinating with cross-functional teams for design reviews, resulting in early delivery with 20% increased efficiency and highest quality
-
- • Employed agile methodologies, emphasizing continuous unit testing to validate robustness and reliability
-
- • Mentored two interns to resolve critical memory leak issues identified through address sanitizer.
-
-
-
- Hewlett Packard (HP)
-
- Bengaluru, Karnataka, India
-
- Software Engineer
-
- August 2019 - December 2020
-
- • Programmed APIs to serialize and deserialize the fax communication data and modified it from XML to Google FlatBuffers for reducing source code memory size by 95% and data decoding time by 45%
-
- • Integrated a common data collection interface at the network and job layers of the T30 protocol stack and generated fax reports, thereby decreasing code duplicity and expediting the fax issues' triage by 35%
-
- • Implemented the CDM adapters for Receive Fax job ticket to enable seamless communication between the resource and application layers.
-
-
-
- Hewlett Packard (HP)
-
- Bengaluru, Karnataka, India
-
- Research and Development Intern
-
- January 2019 - July 2019
-
- • Developed a testing automation system for printer firmware to identify the failure commit and minimize physical intervention, ultimately reducing the effort to triage from 3 person-days to 10 minutes
-
- • Engineered a model of firmware architecture using .NET framework for printer's native code to expedite the integration of a performance profiling tool with the firmware, thereby uncovering issues in advance.
-
-
-
- Reliance Industries
-
- Navi Mumbai, Maharashtra, India
-
- Software Development Intern
-
- April 2018 - May 2018
-
- • Monitored network traffic of Enterprise IDC's data centre and resolved congestion issues by using leaky bucket and token bucket algorithms, thereby improving its resiliency by 4%
-
-
-
- SKILLS
-
- Skills: Python, Java, JavaScript, Adobe After Effects, ASP.NET, MySQL, NoSQL, Digital Ocean, JIRA, MATLAB, Data Structures & Algorithms, Natural Language Processing (NLP), HTML/CSS, Git, C/C++, Agile, React.js
-```
-
-## Formatted Version
-
-```
-# RAKETLA KRISHNA
-+1 617 820 0415 | krishrak@outlook.com | linkedin.com/in/krishna-raketla/
-
-## EDUCATION
-
-**Northeastern University**  
-*January 2023 - May 2025*  
-Master's, Computer Science  
-GPA: 3.5
-
-**Vellore Institute of Technology**  
-*July 2016 - August 2019*  
-Bachelor's, Computer Science  
-GPA: 7.23
-
-## PROFESSIONAL EXPERIENCE
-
-**HP Inc**  
-*Bengaluru, Karnataka, India*  
-**Senior Software Engineer**  
-*January 2021 - November 2022*
-- Spearheaded the Fax UI workflow, specifically developing and validating specs by coordinating with cross-functional teams for design reviews, resulting in early delivery with 20% increased efficiency and highest quality
-- Employed agile methodologies, emphasizing continuous unit testing to validate robustness and reliability
-- Mentored two interns to resolve critical memory leak issues identified through address sanitizer.
-
-**Hewlett Packard (HP)**  
-*Bengaluru, Karnataka, India*  
-**Software Engineer**  
-*August 2019 - December 2020*
-- Programmed APIs to serialize and deserialize the fax communication data and modified it from XML to Google FlatBuffers for reducing source code memory size by 95% and data decoding time by 45%
-- Integrated a common data collection interface at the network and job layers of the T30 protocol stack and generated fax reports, thereby decreasing code duplicity and expediting the fax issues' triage by 35%
-- Implemented the CDM adapters for Receive Fax job ticket to enable seamless communication between the resource and application layers.
-
-**Hewlett Packard (HP)**  
-*Bengaluru, Karnataka, India*  
-**Research and Development Intern**  
-*January 2019 - July 2019*
-- Developed a testing automation system for printer firmware to identify the failure commit and minimize physical intervention, ultimately reducing the effort to triage from 3 person-days to 10 minutes
-- Engineered a model of firmware architecture using .NET framework for printer's native code to expedite the integration of a performance profiling tool with the firmware, thereby uncovering issues in advance.
-
-**Reliance Industries**  
-*Navi Mumbai, Maharashtra, India*  
-**Software Development Intern**  
-*April 2018 - May 2018*
-- Monitored network traffic of Enterprise IDC's data centre and resolved congestion issues by using leaky bucket and token bucket algorithms, thereby improving its resiliency by 4%
-
-## SKILLS
-Python, Java, JavaScript, Adobe After Effects, ASP.NET, MySQL, NoSQL, Digital Ocean, JIRA, MATLAB, Data Structures & Algorithms, Natural Language Processing (NLP), HTML/CSS, Git, C/C++, Agile, React.js 
