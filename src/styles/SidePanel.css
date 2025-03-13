@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: auto;
+  overflow: hidden;
   background-color: var(--color-white);
 }
 
@@ -17,12 +17,15 @@
 
 .prompt-form {
   margin-bottom: var(--spacing-lg);
+  flex-shrink: 0;
 }
 
 .prompt-input {
   resize: none;
-  min-height: 100px;
+  min-height: 80px;
+  max-height: 80px;
   margin-bottom: var(--spacing-md);
+  overflow-y: auto;
 }
 
 .submit-button {
@@ -53,7 +56,7 @@
   background-color: var(--color-gray-10);
   border-radius: var(--border-radius);
   max-height: 200px;
-  overflow: auto;
+  overflow-y: auto;
   font-size: 14px;
 }
 

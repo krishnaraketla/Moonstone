@@ -3,6 +3,10 @@
   box-shadow: none;
   margin-bottom: var(--spacing-md);
   background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  max-height: 350px; /* Control overall height */
+  overflow: hidden; /* Prevent the entire visualizer from scrolling */
 }
 
 .visualizer-header {
@@ -194,8 +198,9 @@ input:checked + .toggle-slider:before {
   flex-wrap: wrap;
   gap: var(--spacing-xs);
   margin-top: var(--spacing-sm);
-  max-height: none;
-  overflow-y: visible;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
 }
 
 .keyword-chip {

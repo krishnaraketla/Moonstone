@@ -1,0 +1,29 @@
+.text-selection-tooltip {
+  position: absolute;
+  background-color: var(--color-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: var(--spacing-xs);
+  z-index: 9999;
+  transition: opacity 0.2s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tooltip-button {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tooltip-button:hover {
+  opacity: 0.9;
+} 

@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import '../styles/SidePanel.css';
 import KeywordMatchVisualizer from './KeywordMatchVisualizer';
+import SelectedTextContext from './SelectedTextContext';
 
 interface Suggestion {
   id: number;
   original: string;
   suggested: string;
   prompt: string;
+}
+
+interface SelectedTextItem {
+  id: string;
+  text: string;
 }
 
 interface SidePanelProps {
@@ -17,6 +23,8 @@ interface SidePanelProps {
   jobDescription: string;
   resumeContent: string;
   onKeywordClick: (keyword: string) => void;
+  selectedTexts: SelectedTextItem[];
+  onRemoveSelectedText: (id: string) => void;
 }
 
 const SidePanel: React.FC<SidePanelProps> = ({ 
@@ -26,7 +34,9 @@ const SidePanel: React.FC<SidePanelProps> = ({
   onRejectEdit,
   jobDescription,
   resumeContent,
-  onKeywordClick
+  onKeywordClick,
+  selectedTexts,
+  onRemoveSelectedText
 }) => {
   const [prompt, setPrompt] = useState<string>('');
 
@@ -41,6 +51,14 @@ const SidePanel: React.FC<SidePanelProps> = ({
   return (
     <div className="side-panel">
       <h2 className="side-panel-header">AI Assistant</h2>
+      
+      {/* Selected Text Context */}
+      {selectedTexts.length > 0 && (
+        <SelectedTextContext 
+          selectedTexts={selectedTexts}
+          onRemove={onRemoveSelectedText}
+        />
+      )}
       
       {/* Prompt Input */}
       <form className="prompt-form" onSubmit={handleSubmit}>
